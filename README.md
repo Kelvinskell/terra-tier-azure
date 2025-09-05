@@ -73,6 +73,7 @@ These tools are required to create containerized instances of the application an
 - Paste this DNS name into a web browser to access your appplication.
 
 [Here](https://dev.to/kelvinskell/a-practical-guide-to-deploying-a-complex-production-level-three-tier-architecture-on-aws-2hf0) is a guide for you if you wish to manually deploy this application.
+
 [Here](https://github.com/Kelvinskell/terra-tier/tree/master) is a terraform guide for you, if you wish to instead deploy this on AWS.
 
 
