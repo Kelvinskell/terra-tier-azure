@@ -1,4 +1,4 @@
-resource "azurerm_key_vault" "example" {
+resource "azurerm_key_vault" "vault" {
   name                       = "mysql-key-vault"
   location                   = var.location
   resource_group_name        = var.resource_group_name
@@ -30,11 +30,11 @@ resource "azurerm_key_vault" "example" {
 resource "azurerm_key_vault_secret" "username" {
   name         = "mysql-user"
   value        = "sqladmin"
-  key_vault_id = azurerm_key_vault.example.id
+  key_vault_id = azurerm_key_vault.vault.id
 }
 
 resource "azurerm_key_vault_secret" "password" {
   name         = "mysql-pass"
   value        = random_password.sql_admin.lower
-  key_vault_id = azurerm_key_vault.example.id
+  key_vault_id = azurerm_key_vault.vault.id
 }

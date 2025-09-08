@@ -25,3 +25,18 @@ module "key_vault" {
   env                 = var.env
   common_tags         = var.common_tags
 }
+
+module "database" {
+  source = "./modules/database"
+
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = var.location
+  env                 = var.env
+  common_tags         = var.common_tags
+  vnet_id             = module.networking.vnet_id
+  key_vault_id        = module.key_vault.key_vault_id
+  key_vault_name      = module.key_vault.key_vault_name
+  db_subnet_id        = module.networking.db_subnet_id
+
+  depends_on = [module.key_vault]
+}

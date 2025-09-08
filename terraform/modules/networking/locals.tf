@@ -23,3 +23,7 @@ locals {
     "database-subnet-2" = "10.0.0.160/27"
   }
 }
+
+locals {
+  subnet_keys = sort(keys(azurerm_subnet.database_sub))
+}
