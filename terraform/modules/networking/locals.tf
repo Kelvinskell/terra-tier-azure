@@ -23,11 +23,3 @@ locals {
     "database-subnet-2" = "10.0.0.160/27"
   }
 }
-
-# Subnets to attach to NAT GW (private + database)
-locals {
-  nat_subnet_ids = toset(concat(
-    [for s in azurerm_subnet.private_sub  : s.id],
-    [for s in azurerm_subnet.database_sub : s.id],
-  ))
-}

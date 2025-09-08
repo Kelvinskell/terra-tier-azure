@@ -36,7 +36,7 @@ resource "azurerm_network_security_group" "nsg_private" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "5000"
-    source_address_prefix      = azurerm_subnet.public_subnet.address_prefixes[0]
+    source_address_prefixes    = [ for s in azurerm_subnet.public_sub : s.address_prefixes[0] ]
     destination_address_prefix = "*"
   }
 
@@ -72,7 +72,7 @@ resource "azurerm_network_security_group" "nsg_db" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "3306"
-    source_address_prefix      = azurerm_subnet.private_subnet.address_prefixes[0]
+    source_address_prefixes    = [ for s in azurerm_subnet.private_sub : s.address_prefixes[0] ]
     destination_address_prefix = "*"
   }
 
@@ -88,17 +88,21 @@ resource "azurerm_network_security_group" "nsg_bastion" {
 
 # Associate Subnets with their NSGs
 resource "azurerm_subnet_network_security_group_association" "assoc_public" {
-  subnet_id                 = azurerm_subnet.public_subnet.id
+  for_each = azurerm_subnet.public_sub
+  subnet_id                 = each.value.id
   network_security_group_id = azurerm_network_security_group.nsg_public.id
 }
 
 resource "azurerm_subnet_network_security_group_association" "assoc_private" {
-  subnet_id                 = azurerm_subnet.private_subnet.id
+
+  for_each = azurerm_subnet.private_sub
+  subnet_id                 = each.value.id
   network_security_group_id = azurerm_network_security_group.nsg_private.id
 }
 
 resource "azurerm_subnet_network_security_group_association" "assoc_database" {
-  subnet_id                 = azurerm_subnet.database_sub.id
+  for_each = azurerm_subnet.database_sub
+  subnet_id                 = each.value.id
   network_security_group_id = azurerm_network_security_group.nsg_db.id
 }
 

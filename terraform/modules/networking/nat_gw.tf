@@ -15,9 +15,14 @@ resource "azurerm_nat_gateway_public_ip_association" "ngw_pip_assoc" {
   public_ip_address_id = azurerm_public_ip.pub_ip_nat.id
 }
 
-# Attach the NAT Gateway to subnets
+# Attach one NAT Gateway to both private and database subnets
 resource "azurerm_subnet_nat_gateway_association" "nat_assoc" {
-    for_each       = local.nat_subnet_ids
-    subnet_id      = each.value
-    nat_gateway_id = azurerm_nat_gateway.ngw.id
+  for_each = merge(
+    { for k, v in azurerm_subnet.private_sub  : k => v },
+    { for k, v in azurerm_subnet.database_sub : k => v }
+  )
+
+  subnet_id      = each.value.id  
+  nat_gateway_id = azurerm_nat_gateway.ngw.id
 }
+
