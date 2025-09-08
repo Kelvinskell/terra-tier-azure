@@ -16,3 +16,12 @@ module "networking" {
   env                 = var.env
   common_tags         = var.common_tags
 }
+
+module "key_vault" {
+  source = "./modules/key_vault"
+
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = var.location
+  env                 = var.env
+  common_tags         = var.common_tags
+}
