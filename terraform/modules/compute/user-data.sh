@@ -6,8 +6,8 @@ echo "nameserver 8.8.8.8" >> /etc/resolv.conf
 apt-get -o Acquire::ForceIPv4=true update -y
 
 # Change hostname
-echo "project-x-app-server" > /etc/hostname
-hostnamectl set-hostname project-x-app-server
+echo "3-tier-app-server" > /etc/hostname
+hostnamectl set-hostname 3-tier-app-server
 
 # --- Install prerequisites ---
 apt-get install -y git binutils curl gnupg lsb-release apt-transport-https ca-certificates
@@ -20,14 +20,13 @@ apt-get update -y
 apt-get install -y azure-cli
 
 # Login to Azure using Managed Identity (VM must have identity and Key Vault access)
-# If you don't have managed identity, replace this with 'az login --service-principal ...' or remove.
 az login --identity || true
 
-# --- Azure Files (EFS equivalent) ---
+# --- Azure Files ---
 # Provide these environment variables or change defaults below:
-RESOURCE_GROUP="${RESOURCE_GROUP:-myResourceGroup}"     # change as needed
-STORAGE_ACCOUNT="${STORAGE_ACCOUNT:-mystorageacct}"     # change as needed
-FILE_SHARE="${FILE_SHARE:-projectxshare}"               # change as needed
+RESOURCE_GROUP="${resource_group}"     # change as needed
+STORAGE_ACCOUNT="${storage_account}"     # change as needed
+FILE_SHARE="${file_share}"               # change as needed
 
 # Install cifs utils to mount Azure file share (if you plan to use it)
 apt-get install -y cifs-utils
@@ -45,16 +44,16 @@ else
 fi
 
 # --- Discover DB credentials from Key Vault and MySQL host ---
-KV_NAME="mysql-key-vault"
+KV_NAME="${kv-name}"
 
 # Secret names you gave: msql-user and mysql-pass
 MYSQL_USER=$(az keyvault secret show --vault-name "$KV_NAME" --name "msql-user" --query value -o tsv 2>/dev/null || echo "")
 MYSQL_PASS=$(az keyvault secret show --vault-name "$KV_NAME" --name "mysql-pass" --query value -o tsv 2>/dev/null || echo "")
 
 # MySQL server & DB (names you provided)
-RESOURCE_GROUP="${RESOURCE_GROUP:-myResourceGroup}"   # reuse or override as env
-MYSQL_SERVER_NAME="mysql-server"
-MYSQL_DB_NAME="mysql-db"
+RESOURCE_GROUP="${RESOURCE_GROUP}"   # reuse or override as env
+MYSQL_SERVER_NAME="${mysql_server_name}"
+MYSQL_DB_NAME="${mysql_db_name}"
 
 # Get the fully qualified domain name for the Azure Database for MySQL server
 # Works for Azure Database for MySQL (single server) and Flexible Server (adjust CLI if needed)
@@ -75,7 +74,7 @@ apt-get install -y python3-flask mysql-client python3-pip python3-venv \
 
 # Clone the app
 cd /
-git clone https://github.com/Kelvinskell/terra-tier.git
+git clone https://github.com/Kelvinskell/terra-tier-azure.git
 cd /terra-tier || true
 
 # Populate App with environment variables (create .env files)
@@ -84,8 +83,8 @@ cat > .env <<EOF
 MYSQL_ROOT_PASSWORD=${MYSQL_PASS}
 EOF
 
-mkdir -p /terra-tier/application || true
-cd /terra-tier/application || true
+mkdir -p /terra-tier-azure/application || true
+cd /terra-tier-azure/application || true
 
 cat > .env <<EOF
 MYSQL_DB=${MYSQL_DB_NAME}
@@ -99,14 +98,14 @@ EOF
 
 # --- Setup the systemd service (same as before) ---
 # Copy service file if present in repo
-if [ -f /terra-tier/newsread.service ]; then
-  cp /terra-tier/newsread.service /etc/systemd/system/newsread.service
+if [ -f /terra-tier-azure/newsread.service ]; then
+  cp /terra-tier-azure/newsread.service /etc/systemd/system/newsread.service
   systemctl daemon-reload
   systemctl enable newsread
 fi
 
 # Install Python dependencies
-cd /terra-tier || true
+cd /terra-tier-azure || true
 if [ -f requirements.txt ]; then
   pip3 install -r requirements.txt
 fi
