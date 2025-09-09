@@ -21,13 +21,13 @@ resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
 
   /* # cloud-init via custom data
   custom_data = base64encode(templatefile("${path.module}/cloud-init.yml.tpl", {
-    resource_group = var.resource_group_name
-    storage_account = var.storage_account_name
-    file_share = var.fileshare_name
-    kv-name = "mysql-key-vault"
-    mysql_server_name="mysql-server"
-    mysql_db_name="mysql-db"
-  }))
+    resource_group   = var.resource_group_name
+    storage_account  = var.storage_account_name
+    file_share       = var.fileshare_name
+    kv_name          = "mysql-key-vault"
+    mysql_server_name = "mysql-server"
+    mysql_db_name     = "mysql-db"
+    }))
  */
   os_disk {
     storage_account_type = "Standard_LRS"
