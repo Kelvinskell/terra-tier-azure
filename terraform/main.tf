@@ -40,3 +40,14 @@ module "database" {
 
   depends_on = [module.key_vault]
 }
+
+module "storage" {
+  source = "./modules/storage"
+
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = var.location
+  env                 = var.env
+  common_tags         = var.common_tags
+  vnet_id             = module.networking.vnet_id
+  private_subnet_id   = module.networking.private_subnet_id
+}

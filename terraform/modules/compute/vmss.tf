@@ -1,0 +1,42 @@
+resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
+  name                = "vmss-3tier-app"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  sku                 = "Standard_B2s"
+  instances           = 2
+  admin_username      = "azureuser"
+  disable_password_authentication = true
+
+  admin_ssh_key {
+    username   = "azureuser"
+    public_key = tls_private_key.ssh.public_key_openssh
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+
+  # cloud-init via custom data
+  #custom_data = base64encode()
+
+  os_disk {
+    storage_account_type = "Standard_LRS"
+    caching              = "ReadWrite"
+  }
+
+  network_interface {
+    name    = "primary-nic"
+    primary = true
+
+    ip_configuration {
+      name      = "internal"
+      primary   = true
+      subnet_id = var.private_subnet_id
+    }
+  }
+
+  tags = local.module_tags
+}

@@ -19,3 +19,14 @@ resource "azurerm_public_ip" "pub_ip_app" {
 
   tags = local.module_tags
 }
+
+# Create public IP for Azure Bastion
+resource "azurerm_public_ip" "pub_ip_bastion" {
+  name                = "bastion_public_ip"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  allocation_method   = "Static"
+  sku               = "Standard"
+
+  tags = local.module_tags
+}
