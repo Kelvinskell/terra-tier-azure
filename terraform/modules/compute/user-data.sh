@@ -10,7 +10,7 @@ echo "3-tier-app-server" > /etc/hostname
 hostnamectl set-hostname 3-tier-app-server
 
 # --- Install prerequisites ---
-apt-get install -y git binutils curl gnupg lsb-release apt-transport-https ca-certificates
+apt-get install -y git binutils curl gpg lsb-release apt-transport-https ca-certificates
 
 # Install Azure CLI (official repo)
 curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-archive-keyring.gpg
@@ -20,73 +20,69 @@ apt-get update -y
 apt-get install -y azure-cli
 
 # Login to Azure using Managed Identity (VM must have identity and Key Vault access)
-az login --identity || true
+az login --identity >/dev/null 2>&1 || true
 
-# --- Azure Files ---
-# Provide these environment variables or change defaults below:
-RESOURCE_GROUP="${resource_group}"     # change as needed
-STORAGE_ACCOUNT="${storage_account}"     # change as needed
-FILE_SHARE="${file_share}"               # change as needed
+# --- Azure Files (optional) ---
+# Template placeholders:
+#   ${resource_group}   -> resource group name
+#   ${storage_account}  -> storage account name
+#   ${file_share}       -> file share name
+RESOURCE_GROUP="${resource_group}"
+STORAGE_ACCOUNT="${storage_account}"
+FILE_SHARE="${file_share}"
 
-# Install cifs utils to mount Azure file share (if you plan to use it)
 apt-get install -y cifs-utils
 
-# Attempt to create the file share if it doesn't exist (requires storage account)
-# Get storage key (first key)
 STORAGE_KEY=$(az storage account keys list -g "$RESOURCE_GROUP" -n "$STORAGE_ACCOUNT" --query '[0].value' -o tsv 2>/dev/null || echo "")
 if [ -n "$STORAGE_KEY" ]; then
-  az storage share create --name "$FILE_SHARE" --account-name "$STORAGE_ACCOUNT" --account-key "$STORAGE_KEY" || true
+  az storage share create --name "$FILE_SHARE" --account-name "$STORAGE_ACCOUNT" --account-key "$STORAGE_KEY" >/dev/null 2>&1 || true
   mkdir -p /mnt/azurefiles
   mount -t cifs //${STORAGE_ACCOUNT}.file.core.windows.net/${FILE_SHARE} /mnt/azurefiles \
     -o vers=3.0,username=${STORAGE_ACCOUNT},password=${STORAGE_KEY},dir_mode=0777,file_mode=0777,serverino || true
 else
-  echo "Warning: Could not get storage account key for $STORAGE_ACCOUNT (check RESOURCE_GROUP/STORAGE_ACCOUNT permissions). Skipping Azure Files mount."
+  echo "Warning: Could not obtain storage account key for ${STORAGE_ACCOUNT}. Skipping Azure Files mount."
 fi
 
-# --- Discover DB credentials from Key Vault and MySQL host ---
-KV_NAME="${kv-name}"
+# --- Key Vault / MySQL secrets ---
+KV_NAME="${kv_name}"
 
-# Secret names you gave: msql-user and mysql-pass
-MYSQL_USER=$(az keyvault secret show --vault-name "$KV_NAME" --name "msql-user" --query value -o tsv 2>/dev/null || echo "")
+# Secrets in Key Vault: "mysql-user" and "mysql-pass"
+MYSQL_USER=$(az keyvault secret show --vault-name "$KV_NAME" --name "mysql-user" --query value -o tsv 2>/dev/null || echo "")
 MYSQL_PASS=$(az keyvault secret show --vault-name "$KV_NAME" --name "mysql-pass" --query value -o tsv 2>/dev/null || echo "")
 
-# MySQL server & DB (names you provided)
-RESOURCE_GROUP="${RESOURCE_GROUP}"   # reuse or override as env
+# MySQL server & DB (placeholders)
 MYSQL_SERVER_NAME="${mysql_server_name}"
 MYSQL_DB_NAME="${mysql_db_name}"
 
-# Get the fully qualified domain name for the Azure Database for MySQL server
-# Works for Azure Database for MySQL (single server) and Flexible Server (adjust CLI if needed)
-MYSQL_HOST=$(az mysql server show -g "$RESOURCE_GROUP" -n "$MYSQL_SERVER_NAME" --query fullyQualifiedDomainName -o tsv 2>/dev/null || true)
+# Resolve MySQL host (single or flexible server)
+MYSQL_HOST=$(az mysql server show -g "${resource_group}" -n "$MYSQL_SERVER_NAME" --query fullyQualifiedDomainName -o tsv 2>/dev/null || true)
 if [ -z "$MYSQL_HOST" ]; then
-  # Try flexible-server command (if using flexible server sku)
-  MYSQL_HOST=$(az mysql flexible-server show -g "$RESOURCE_GROUP" -n "$MYSQL_SERVER_NAME" --query fullyQualifiedDomainName -o tsv 2>/dev/null || true)
+  MYSQL_HOST=$(az mysql flexible-server show -g "${resource_group}" -n "$MYSQL_SERVER_NAME" --query fullyQualifiedDomainName -o tsv 2>/dev/null || true)
 fi
 
 if [ -z "$MYSQL_USER" ] || [ -z "$MYSQL_PASS" ] || [ -z "$MYSQL_HOST" ]; then
-  echo "WARNING: Could not fetch one or more of MYSQL_USER / MYSQL_PASS / MYSQL_HOST from Azure. Check Key Vault access and server existence."
+  echo "WARNING: missing MYSQL_USER, MYSQL_PASS or MYSQL_HOST. Check VM managed identity and Key Vault / MySQL resource names."
 fi
 
-# --- Install app dependencies (no mysql-server on VM - using Azure MySQL) ---
+# --- Install app dependencies (VM uses Azure MySQL, no local mysql-server) ---
 apt-get update -y && apt-get upgrade -y
 apt-get install -y python3-flask mysql-client python3-pip python3-venv \
   sox ffmpeg libcairo2 libcairo2-dev python3-dev default-libmysqlclient-dev build-essential
 
-# Clone the app
-cd /
-git clone https://github.com/Kelvinskell/terra-tier-azure.git
-cd /terra-tier || true
+# --- Clone application repo ---
+cd / || true
+rm -rf /terra-tier-azure
+git clone https://github.com/Kelvinskell/terra-tier-azure.git /terra-tier-azure || true
+cd /terra-tier-azure || true
 
-# Populate App with environment variables (create .env files)
-# Root password and DB creds are pulled from Key Vault
-cat > .env <<EOF
+# --- Write .env files with secrets from Key Vault ---
+cat > /terra-tier-azure/.env <<EOF
 MYSQL_ROOT_PASSWORD=${MYSQL_PASS}
 EOF
 
 mkdir -p /terra-tier-azure/application || true
-cd /terra-tier-azure/application || true
 
-cat > .env <<EOF
+cat > /terra-tier-azure/application/.env <<EOF
 MYSQL_DB=${MYSQL_DB_NAME}
 MYSQL_HOST=${MYSQL_HOST}
 MYSQL_USER=${MYSQL_USER}
@@ -96,23 +92,21 @@ SECRET_KEY=08dae760c2488d8a0dca1bfb
 API_KEY=f39307bb61fb31ea2c458479762b9acc
 EOF
 
-# --- Setup the systemd service (same as before) ---
-# Copy service file if present in repo
+# --- Systemd service setup (if present in repo) ---
 if [ -f /terra-tier-azure/newsread.service ]; then
   cp /terra-tier-azure/newsread.service /etc/systemd/system/newsread.service
   systemctl daemon-reload
   systemctl enable newsread
 fi
 
-# Install Python dependencies
+# --- Python dependencies and service start ---
 cd /terra-tier-azure || true
 if [ -f requirements.txt ]; then
-  pip3 install -r requirements.txt
+  pip3 install -r requirements.txt || true
 fi
 
-# Start the service if created
 if systemctl list-unit-files | grep -q newsread; then
   systemctl start newsread || true
 fi
 
-echo "Azure userdata script finished."
+echo "Userdata script completed."
