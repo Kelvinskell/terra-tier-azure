@@ -31,7 +31,7 @@ write_files:
       # Login to Azure using Managed Identity (VM must have identity and Key Vault access)
       az login --identity >/dev/null 2>&1 || true
 
-      # --- Azure Files (optional) ---
+      # --- Azure Files ---
       # Template placeholders (will be rendered by Terraform):
       #   ${resource_group}   -> resource group name
       #   ${storage_account}  -> storage account name
@@ -46,10 +46,10 @@ write_files:
       if [ -n "$STORAGE_KEY" ]; then
         az storage share create --name "$FILE_SHARE" --account-name "$STORAGE_ACCOUNT" --account-key "$STORAGE_KEY" >/dev/null 2>&1 || true
         mkdir -p /mnt/azurefiles
-        mount -t cifs //${STORAGE_ACCOUNT}.file.core.windows.net/${FILE_SHARE} /mnt/azurefiles \
-          -o vers=3.0,username=${STORAGE_ACCOUNT},password=${STORAGE_KEY},dir_mode=0777,file_mode=0777,serverino || true
+        mount -t cifs //$${STORAGE_ACCOUNT}.file.core.windows.net/$${FILE_SHARE} /mnt/azurefiles \
+          -o vers=3.0,username=$${STORAGE_ACCOUNT},password=$${STORAGE_KEY},dir_mode=0777,file_mode=0777,serverino || true
       else
-        echo "Warning: Could not obtain storage account key for ${STORAGE_ACCOUNT}. Skipping Azure Files mount."
+        echo "Warning: Could not obtain storage account key for $${STORAGE_ACCOUNT}. Skipping Azure Files mount."
       fi
 
       # --- Key Vault / MySQL secrets ---
@@ -86,17 +86,17 @@ write_files:
 
       # --- Write .env files with secrets from Key Vault ---
       cat > /terra-tier-azure/.env <<EOF
-      MYSQL_ROOT_PASSWORD=${MYSQL_PASS}
+      MYSQL_ROOT_PASSWORD=$${MYSQL_PASS}
       EOF
 
       mkdir -p /terra-tier-azure/application || true
 
       cat > /terra-tier-azure/application/.env <<EOF
-      MYSQL_DB=${MYSQL_DB_NAME}
-      MYSQL_HOST=${MYSQL_HOST}
-      MYSQL_USER=${MYSQL_USER}
-      DATABASE_PASSWORD=${MYSQL_PASS}
-      MYSQL_ROOT_PASSWORD=${MYSQL_PASS}
+      MYSQL_DB=$${MYSQL_DB_NAME}
+      MYSQL_HOST=$${MYSQL_HOST}
+      MYSQL_USER=$${MYSQL_USER}
+      DATABASE_PASSWORD=$${MYSQL_PASS}
+      MYSQL_ROOT_PASSWORD=$${MYSQL_PASS}
       SECRET_KEY=08dae760c2488d8a0dca1bfb
       API_KEY=f39307bb61fb31ea2c458479762b9acc
       EOF

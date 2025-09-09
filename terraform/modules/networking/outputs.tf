@@ -3,6 +3,11 @@ output "vnet_id" {
   value = azurerm_virtual_network.vnet.id
 }
 
+output "vnet_name" {
+  description = "Name of the VNet"
+  value = azurerm_virtual_network.vnet.name
+}
+
 output "db_subnet_id" {
   description = "ID of one of the db subnets"
   value = azurerm_subnet.database_sub[local.db_subnet_keys[0]].id

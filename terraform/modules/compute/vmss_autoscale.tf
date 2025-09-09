@@ -1,8 +1,8 @@
 # Create autoscaling configurations for the vm scale set
 resource "azurerm_monitor_autoscale_setting" "vmss_autoscale" {
   name                = "vmss-autoscale"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  resource_group_name = var.resource_group_name
+  location            = var.location
   target_resource_id  = azurerm_linux_virtual_machine_scale_set.vmss.id
 
   profile {
