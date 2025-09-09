@@ -78,7 +78,7 @@ module "compute" {
   fileshare_name       = module.storage.file_share_name
   storage_account_name = module.storage.storage_account_name
   backend_addr_pool_id = module.appgateway.backend_addr_pool_id
-  mysqlvault_name = module.key_vault.key_vault_name
+  mysqlvault_name      = module.key_vault.key_vault_name
 
   depends_on = [
     module.database,

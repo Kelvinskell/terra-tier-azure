@@ -1,7 +1,7 @@
-data "azurerm_key_vault" "vault" {
+/*data "azurerm_key_vault" "vault" {
     name = var.key_vault_name
     resource_group_name = var.resource_group_name
-}
+}*/
 
 data "azurerm_key_vault_secret" "user" {
     name = "mysql-user"

@@ -26,7 +26,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
     file_share       = var.fileshare_name
     kv_name          = var.mysqlvault_name
     mysql_server_name = "mysql-server"
-    mysql_db_name     = "mysql-db"
+    mysql_db_name     = "mysqldb"
     }))
  
   os_disk {

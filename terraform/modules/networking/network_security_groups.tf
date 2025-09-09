@@ -95,10 +95,11 @@ resource "azurerm_network_security_group" "nsg_bastion" {
   name                = "nsg-bastion"
   location            = var.location
   resource_group_name = var.resource_group_name
+  tags                = local.module_tags
 
-
-security_rule {
-    name                       = "Allow-Bastion-HTTPS"
+  # ---------- Inbound ----------
+  security_rule {
+    name                       = "Allow-HTTPS-From-Internet"
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
@@ -110,7 +111,7 @@ security_rule {
   }
 
   security_rule {
-    name                       = "Allow-GatewayManager-HTTPS"
+    name                       = "Allow-HTTPS-From-GatewayManager"
     priority                   = 110
     direction                  = "Inbound"
     access                     = "Allow"
@@ -122,17 +123,77 @@ security_rule {
   }
 
   security_rule {
-    name                       = "Allow-GatewayManager-SSH"
+    name                       = "Allow-HTTPS-From-AzureLoadBalancer"
     priority                   = 120
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = "GatewayManager"
+    destination_port_range     = "443"
+    source_address_prefix      = "AzureLoadBalancer"
     destination_address_prefix = "*"
   }
- tags = local.module_tags
+
+  security_rule {
+    name                       = "Allow-Bastion-DataPlane-In"
+    priority                   = 130
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["8080", "5701"]
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "VirtualNetwork"
+  }
+
+  # ---------- Outbound ----------
+  security_rule {
+    name                       = "Allow-RDP-SSH-Out"
+    priority                   = 200
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["3389", "22"]
+    source_address_prefix      = "*"
+    destination_address_prefix = "VirtualNetwork"
+  }
+
+  security_rule {
+    name                       = "Allow-Bastion-DataPlane-Out"
+    priority                   = 210
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["8080", "5701"]
+    source_address_prefix      = "VirtualNetwork"
+    destination_address_prefix = "VirtualNetwork"
+  }
+
+  security_rule {
+    name                       = "Allow-AzureCloud-443-Out"
+    priority                   = 220
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "*"
+    destination_address_prefix = "AzureCloud"
+  }
+
+  security_rule {
+    name                       = "Allow-Internet-80-Out"
+    priority                   = 230
+    direction                  = "Outbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "Internet"
+  }
 }
 
 # Associate Subnets with their NSGs

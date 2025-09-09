@@ -1,5 +1,13 @@
+# Generate random string
+resource "random_string" "random" {
+  length  = 4
+  upper   = false
+  special = false
+}
+
+# Create Key Vault
 resource "azurerm_key_vault" "vault" {
-  name                       = "mysqlvault"
+  name                       = "mysqlvault${random_string.random.lower}"
   location                   = var.location
   resource_group_name        = var.resource_group_name
   tenant_id                  = data.azurerm_client_config.current.tenant_id
@@ -27,7 +35,7 @@ resource "azurerm_key_vault" "vault" {
   tags = local.module_tags
 }
 
-
+# Create Key vault secrets
 resource "azurerm_key_vault_secret" "username" {
   name         = "mysql-user"
   value        = "sqladmin"
