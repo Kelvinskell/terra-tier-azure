@@ -9,7 +9,7 @@ resource "azurerm_monitor_autoscale_setting" "vmss_autoscale" {
     name = "cpu-scaling"
     capacity {
       minimum = 2
-      maximum = 5
+      maximum = 4
       default = 2
     }
 
