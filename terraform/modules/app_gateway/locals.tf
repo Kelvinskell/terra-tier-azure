@@ -8,9 +8,11 @@ locals {
 
 locals {
   backend_address_pool_name      = "${var.vnet_name}-be-addr-pool"
-  frontend_port_name             = "${var.vnet_name}-fe-port-name"
+  frontend_port_name             = "${var.vnet_name}-fe-port"
   frontend_ip_configuration_name = "${var.vnet_name}-fe-ip-config"
+  gateway_ip_configuration_name  = "${var.vnet_name}-gw-ip-config"
   http_setting_name              = "${var.vnet_name}-be-http-setting"
   listener_name                  = "${var.vnet_name}-http-lstn"
+  probe_name                     = "${var.vnet_name}-health-probe"
   request_routing_rule_name      = "${var.vnet_name}-rq-rt-rule"
 }

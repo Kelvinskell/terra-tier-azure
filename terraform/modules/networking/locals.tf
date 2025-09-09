@@ -27,4 +27,5 @@ locals {
 locals {
   db_subnet_keys = sort(keys(azurerm_subnet.database_sub))
   private_subnet_keys = sort(keys(azurerm_subnet.private_sub))
+  public_subnet_keys = sort(keys(azurerm_subnet.public_sub))
 }

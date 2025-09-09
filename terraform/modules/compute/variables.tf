@@ -8,3 +8,5 @@ variable "private_subnet_id" {}
 variable "key_vault_id" {}
 variable "storage_account_name" {}
 variable "fileshare_name" {}
+variable "backend_addr_pool_id" {}
+variable "mysqlvault_name" {}

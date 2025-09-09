@@ -24,7 +24,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
     resource_group   = var.resource_group_name
     storage_account  = var.storage_account_name
     file_share       = var.fileshare_name
-    kv_name          = "mysql-key-vault"
+    kv_name          = var.mysqlvault_name
     mysql_server_name = "mysql-server"
     mysql_db_name     = "mysql-db"
     }))
@@ -42,6 +42,10 @@ resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
       name      = "internal"
       primary   = true
       subnet_id = var.private_subnet_id
+
+      application_gateway_backend_address_pool_ids = [
+        var.backend_addr_pool_id
+      ]
     }
   }
 

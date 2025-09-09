@@ -1,8 +1,8 @@
 # Create application gateway
 resource "azurerm_application_gateway" "network" {
-  name                = "example-appgateway"
-  resource_group_name = azurerm_resource_group.example.name
-  location            = azurerm_resource_group.example.location
+  name                = "three-tier-appgateway"
+  resource_group_name = var.resource_group_name
+  location            = var.location
 
   sku {
     name     = "Standard_v2"
@@ -11,8 +11,8 @@ resource "azurerm_application_gateway" "network" {
   }
 
   gateway_ip_configuration {
-    name      = "my-gateway-ip-configuration"
-    subnet_id = module.network.private_subnet_id
+    name      = local.gateway_ip_configuration_name
+    subnet_id = var.public_subnet_id
   }
 
   frontend_port {
@@ -22,7 +22,7 @@ resource "azurerm_application_gateway" "network" {
 
   frontend_ip_configuration {
     name                 = local.frontend_ip_configuration_name
-    public_ip_address_id = azurerm_public_ip.example.id
+    public_ip_address_id = var.appgw-pip
   }
 
   backend_address_pool {
@@ -35,6 +35,7 @@ resource "azurerm_application_gateway" "network" {
     port                  = 5000    # traffic forwarded to backend on 5000
     protocol              = "Http"
     request_timeout       = 60
+    probe_name = local.probe_name
   }
 
   http_listener {
@@ -42,6 +43,16 @@ resource "azurerm_application_gateway" "network" {
     frontend_ip_configuration_name = local.frontend_ip_configuration_name
     frontend_port_name             = local.frontend_port_name
     protocol                       = "Http"
+  }
+
+  probe {
+    name = local.probe_name
+    protocol = "Http"
+    host = "localhost"
+    path = "/"
+    interval = 30
+    timeout = 20
+    unhealthy_threshold = 4
   }
 
   request_routing_rule {
@@ -52,12 +63,4 @@ resource "azurerm_application_gateway" "network" {
     backend_address_pool_name  = local.backend_address_pool_name
     backend_http_settings_name = local.http_setting_name
   }
-}
-
-# Attach App Gw to VMSS
-resource "azurerm_application_gateway_backend_address_pool_address" "vmss" {
-  application_gateway_name     = azurerm_application_gateway.network.name
-  resource_group_name          = azurerm_resource_group.example.name
-  backend_address_pool_name    = local.backend_address_pool_name
-  virtual_machine_scale_set_id = azurerm_linux_virtual_machine_scale_set.example.id
 }

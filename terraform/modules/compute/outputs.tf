@@ -9,3 +9,8 @@ output "public_key_openssh" {
     value = tls_private_key.ssh.public_key_openssh
     sensitive = false
 }
+
+output "vmss_id" {
+  description = "ID of the VMSS"
+  value = azurerm_linux_virtual_machine_scale_set.vmss.id
+}

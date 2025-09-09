@@ -52,6 +52,18 @@ module "storage" {
   private_subnet_id   = module.networking.private_subnet_id
 }
 
+module "appgateway" {
+  source = "./modules/app_gateway"
+
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = var.location
+  env                 = var.env
+  common_tags         = var.common_tags
+  vnet_name           = module.networking.vnet_name
+  appgw-pip           = module.networking.pip-appgw
+  public_subnet_id    = module.networking.public_subnet_id
+}
+
 module "compute" {
   source = "./modules/compute"
 
@@ -65,6 +77,8 @@ module "compute" {
   bastion_subnet_id    = module.networking.bastion_subnet_id
   fileshare_name       = module.storage.file_share_name
   storage_account_name = module.storage.storage_account_name
+  backend_addr_pool_id = module.appgateway.backend_addr_pool_id
+  mysqlvault_name = module.key_vault.key_vault_name
 
   depends_on = [
     module.database,

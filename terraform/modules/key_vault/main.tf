@@ -1,5 +1,5 @@
 resource "azurerm_key_vault" "vault" {
-  name                       = "mysql-key-vault"
+  name                       = "mysqlvault"
   location                   = var.location
   resource_group_name        = var.resource_group_name
   tenant_id                  = data.azurerm_client_config.current.tenant_id
@@ -35,6 +35,6 @@ resource "azurerm_key_vault_secret" "username" {
 
 resource "azurerm_key_vault_secret" "password" {
   name         = "mysql-pass"
-  value        = random_password.sql_admin.lower
+  value        = random_password.sql_admin.result
   key_vault_id = azurerm_key_vault.vault.id
 }
