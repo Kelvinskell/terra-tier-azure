@@ -7,7 +7,7 @@ resource "random_string" "random" {
 
 # --- Private DNS zone for MySQL Flexible (used by VNet Integration) ---
 resource "azurerm_private_dns_zone" "mysql_plz" {
-  name                = "mysql.database.azure.com"
+  name                = "privatelink.mysql.database.azure.com"
   resource_group_name = var.resource_group_name
 }
 
@@ -34,6 +34,7 @@ resource "azurerm_mysql_flexible_server" "mysql" {
 
   sku_name               = "B_Standard_B1ms"  
   backup_retention_days  = 7
+  version                = "12.0"
   # Ensure DNS link exists before server creation
   depends_on = [azurerm_private_dns_zone_virtual_network_link.mysql_plz_link]
 }
