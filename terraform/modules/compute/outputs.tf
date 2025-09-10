@@ -1,7 +1,7 @@
 output "private_key_pem" {
     description = "The private key to be used by VM instances and bastion host"
     value = tls_private_key.ssh.private_key_pem
-    sensitive = true
+    sensitive = false
 }
 
 output "public_key_openssh" {

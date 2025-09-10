@@ -12,3 +12,7 @@ variable "common_tags" {
   type    = map(string)
   default = { ManagedBy = "Terraform" }
 }
+
+variable "additional_user_upn" {
+  default = ""
+}

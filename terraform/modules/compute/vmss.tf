@@ -53,5 +53,17 @@ resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
     type = "SystemAssigned"
   }
 
-  tags = local.module_tags
+tags = merge(local.module_tags, {
+    custom_data_hash = sha1(templatefile("${path.module}/cloud-init.yml.tpl", {
+    resource_group   = var.resource_group_name
+    storage_account  = var.storage_account_name
+    file_share       = var.fileshare_name
+    kv_name          = var.mysqlvault_name
+    mysql_server_name = "mysql-server"
+    mysql_db_name     = "mysqldb"
+    }))})
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }

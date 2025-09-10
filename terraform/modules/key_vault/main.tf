@@ -27,12 +27,36 @@ resource "azurerm_key_vault" "vault" {
     secret_permissions = [
       "Set",
       "Get",
+      "List",
       "Delete",
       "Purge",
       "Recover"
     ]
   }
   tags = local.module_tags
+  lifecycle {
+    ignore_changes = all
+  }
+}
+
+# Create additinal key vault access policy for user
+data "azuread_user" "current_user" {
+  count               = var.additional_user_upn != "" ? 1 : 0
+  user_principal_name = var.additional_user_upn  
+}
+
+resource "azurerm_key_vault_access_policy" "user_policy" {
+  count = var.additional_user_upn != "" ? 1 : 0
+  key_vault_id = azurerm_key_vault.vault.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = data.azuread_user.current_user[0].object_id
+  key_permissions = [
+    "Get", "List"
+  ]
+
+  secret_permissions = [
+    "Get", "List", "Set"
+  ]
 }
 
 # Create Key vault secrets

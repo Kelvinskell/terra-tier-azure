@@ -6,9 +6,11 @@ resource "azurerm_key_vault_access_policy" "vmss_policy" {
 
   key_permissions = [
     "Get",
+    "List"
   ]
 
   secret_permissions = [
     "Get",
+    "List"
   ]
 }

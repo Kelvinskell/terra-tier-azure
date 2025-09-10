@@ -22,9 +22,13 @@ write_files:
       apt-get install -y git binutils curl gnupg lsb-release apt-transport-https ca-certificates
 
       # Install Azure CLI (official repo)
-      curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-archive-keyring.gpg
-      echo "deb [signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/ubuntu/$(lsb_release -rs)/prod $(lsb_release -cs) main" \
-        > /etc/apt/sources.list.d/azure-cli.list
+      curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
+      gpg --dearmor | \
+      sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
+
+      echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | \
+      sudo tee /etc/apt/sources.list.d/azure-cli.list
+
       apt-get update -y
       apt-get install -y azure-cli
 

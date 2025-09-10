@@ -24,6 +24,7 @@ module "key_vault" {
   location            = var.location
   env                 = var.env
   common_tags         = var.common_tags
+  additional_user_upn = var.additional_user_upn
 }
 
 module "database" {
